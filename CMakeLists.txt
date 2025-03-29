@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.31)
 
+set(PICO_BOARD pico_w)
+#set(PICO_NO_PICOTOOL true)
+set(PICO_SDK_PATH ../../pico-webserver-2.0/pico-sdk)
 include(pico_sdk_import.cmake)
 
 project(test_project C CXX ASM)

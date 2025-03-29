@@ -13,7 +13,7 @@ enum  {
 };
 
 static uint32_t blink_interval_ms = BLINK_NOT_MOUNTED;
-const uint LED_PIN = PICO_DEFAULT_LED_PIN;
+const uint LED_PIN = 25;
 
 void led_blinking_task(void);
 void midi_task(void);
@@ -80,7 +80,7 @@ uint8_t note_sequence[] =
 void midi_task(void)
 {
   static uint32_t start_ms = 0;
-  uint8_t msg[3];
+  uint8_t msg[64];
 
   // send note every 1000 ms
   if (board_millis() - start_ms < 286) return; // not enough time
@@ -93,16 +93,20 @@ void midi_task(void)
   // previous position to the last note in the sequence.
   if (previous < 0) previous = sizeof(note_sequence) - 1;
 
-  // Send Note On for current position at full velocity (127) on channel 1.
-  msg[0] = 0x90;                    // Note On - Channel 1
-  msg[1] = note_sequence[note_pos]; // Note Number
-  msg[2] = 127;                     // Velocity
-  tud_midi_n_stream_write(0, 0, msg, 3);
+	for ( int i=0 ; i < 62;i++){
+	  // Send Note On for current position at full velocity (127) on channel 1.
+	  msg[i] = 0x90;                    // Note On - Channel 1
+	  msg[i+1] = note_sequence[note_pos]; // Note Number
+	  msg[i+2] = 127;                     // Velocity
+	}
+  tud_midi_n_stream_write(0, 0, msg, 64);
 
-  // Send Note Off for previous note.
-  msg[0] = 0x80;                    // Note Off - Channel 1
-  msg[1] = note_sequence[previous]; // Note Number
-  msg[2] = 0;                       // Velocity
+	for ( int i=0 ; i < 62;i++){
+	  // Send Note Off for previous note.
+	  msg[i] = 0x80;                    // Note Off - Channel 1
+	  msg[i+1] = note_sequence[previous]; // Note Number
+	  msg[i+2] = 0;                       // Velocity
+	}
   tud_midi_n_stream_write(0, 0, msg, 3);
 
   // Increment position
@@ -110,6 +114,11 @@ void midi_task(void)
 
   // If we are at the end of the sequence, start over.
   if (note_pos >= sizeof(note_sequence)) note_pos = 0;
+  
+  if (tud_midi_n_available(0, 0)) {
+    uint32_t num_bytes_read = tud_midi_n_stream_read(0, 0, msg, 64);
+    //return num_bytes_read;  // Return the number of bytes actually read
+  }
 }
 
 //--------------------------------------------------------------------+
